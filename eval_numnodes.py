@@ -170,9 +170,11 @@ def main():
     # TODO -> define torch.tensor of one-hot for n_nodes
     # TODO -> check that it is within the Categorical
     # TODO -> redefine the Categorical distribution to load all probability mass on n_nodes
+    print(f"Data dist: {nodes_dist.m.probs}")
     n_nodes_tensor = torch.empty_like(nodes_dist.m.probs)
-    n_nodes_tensor[n_nodes] = 1.0
-    nodes_dist.m = torch.distributions.Categorical(n_nodes_tensor)
+    n_nodes_tensor[n_nodes] = 1000.0    
+    nodes_dist.m = torch.distributions.Categorical(torch.softmax(n_nodes_tensor, 0))
+    print(f"Forced dist: {nodes_dist.m.probs}")
     
     # Finish loading model
     fn = 'generative_model_ema.npy' if args.ema_decay > 0 else 'generative_model.npy'
