@@ -30,6 +30,10 @@ from train_progdistill import train_epoch, test, analyze_and_save
 parser = argparse.ArgumentParser(description='ProgDistillatsion')
 parser.add_argument('--exp_name', type=str, default='debug_10')
 
+# Teacher-student args
+parser.add_argument('--teacher_path', type=str, default='outputs/qm9_latent2',
+                    help='Path to teacher model')
+
 # Latent Diffusion args
 parser.add_argument('--train_diffusion', action='store_true', 
                     help='Train second stage LatentDiffusionModel model')
