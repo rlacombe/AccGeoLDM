@@ -213,8 +213,7 @@ else:
     model, nodes_dist, prop_dist = get_autoencoder(args, device, dataset_info, dataloaders['train'])
 
 # student model starts from the teacher model
-model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher 
-# TODO model.Gamma. 
+model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher  
 
 if prop_dist is not None:
     prop_dist.set_normalizer(property_norms)
