@@ -35,7 +35,7 @@ dataloaders, charge_scale = dataset.retrieve_dataloaders(args)
 args.diffusion_steps = 2*args.diffusion_steps
 
 model_state_dict = torch.load(join(f'outputs/{args.exp_name}', 'generative_model.npy'))
-model_ema_state_dict = torch.load(f'outputs/{args.exp_name}', 'generative_model_ema.npy'))
+model_ema_state_dict = torch.load(join(f'outputs/{args.exp_name}', 'generative_model_ema.npy'))
 optim_state_dict = torch.load(join(f'outputs/{args.exp_name}', 'optim.npy'))
 
 model, _, _ = get_latent_diffusion(args, torch.device("cpu"), dataset_info, dataloaders['train'])
