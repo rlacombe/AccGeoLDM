@@ -37,7 +37,7 @@ with open(join(f'outputs/{args.exp_name}', 'args.pickle'), 'rb') as f:
 dataset_info = get_dataset_info(args.dataset, args.remove_h)
 dataloaders, charge_scale = dataset.retrieve_dataloaders(args)
 
-#args.diffusion_steps = 2*args.diffusion_steps
+args.diffusion_steps = 2*args.diffusion_steps
 
 model_state_dict = torch.load(join(args.teacher_path, 'generative_model.npy'))
 model_ema_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
@@ -49,11 +49,14 @@ model_ema = copy.deepcopy(model)
 model.load_state_dict(model_state_dict)
 model_ema.load_state_dict(model_ema_state_dict)
 
+args.diffusion_steps = args.diffusion_steps/2
+
 model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
 model_ema.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
 args.exp_name = args.exp_name+'_gamma_fixed'
+
 
 utils.create_folders(args)
 
