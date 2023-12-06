@@ -8,7 +8,7 @@ import utils
 import argparse
 import wandb
 from configs.datasets_config import get_dataset_info
-from os.path import join, basename, mkdir
+from os.path import join
 from qm9 import dataset
 from qm9.models import get_optim, get_model, get_autoencoder, get_latent_diffusion
 from equivariant_diffusion import en_diffusion
@@ -55,7 +55,7 @@ model_ema.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_sche
                                                    args.diffusion_steps, args.diffusion_noise_precision)
 args.exp_name = args.exp_name+'gamma_fixed'
 
-mkdir(f'outputs/{args.exp_name}')
+utils.create_folders(args)
 
 utils.save_model(model, 'outputs/%s/generative_model.npy' % args.exp_name)
 utils.save_model(model_ema, 'outputs/%s/generative_model_ema.npy' % args.exp_name)
