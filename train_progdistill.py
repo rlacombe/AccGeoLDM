@@ -54,7 +54,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
         z_x, z_h =  encode_to_latent_space(teacher, x, h, node_mask, edge_mask, context) 
 
         # Sample time steps
-        t, u, v, alpha_t, sigma_t, alpha_u, sigma_u, alpha_v, sigma_v = sample_time_steps(teacher, args.diffusion_timesteps, z_x)
+        t, u, v, alpha_t, sigma_t, alpha_u, sigma_u, alpha_v, sigma_v = sample_time_steps(teacher, args.diffusion_steps, z_x)
 
         # Sample zt ~ Normal(alpha_t x, sigma_t)
         eps = teacher.sample_combined_position_feature_noise(
