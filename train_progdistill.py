@@ -154,7 +154,7 @@ def encode_to_latent_space(model, x, h, node_mask, edge_mask, context):
         # Encode data to latent space.
         z_x_mu, z_x_sigma, z_h_mu, z_h_sigma = model.vae.encode(x, h, node_mask, edge_mask, context)
         # Compute fixed sigma values.
-        t_zeros = torch.zeros(size=(x.size(0), 1), device=model.gamma.device)
+        t_zeros = torch.zeros(size=(x.size(0), 1), device=cpu)
         gamma_0 = model.inflate_batch_array(model.gamma(t_zeros), x)
         sigma_0 = model.sigma(gamma_0, x)
 
