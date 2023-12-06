@@ -209,7 +209,7 @@ else:
     model, nodes_dist, prop_dist = get_autoencoder(args, device, dataset_info, dataloaders['train'])
 
 # student model starts from the teacher model
-model = teacher.deepcopy() # NOTE 'model' is the student model, 'teacher' is the teacher 
+model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher 
 
 # TODO change exp name
 # TODO divide steps by two
