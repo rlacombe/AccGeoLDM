@@ -22,9 +22,9 @@ from train_progdistill import train_epoch, test, analyze_and_save
 
 '''
 ```python main_progdistill.py --n_epochs 30 --n_stability_samples 1000 --diffusion_noise_schedule polynomial_2 
---diffusion_noise_precision 1e-5 --diffusion_steps 1000 --diffusion_loss_type l2 --batch_size 64 --nf 256 
---n_layers 9 --lr 1e-4 --normalize_factors [1,4,10] --test_epochs 20 --ema_decay 0.9999 --train_diffusion
---latent_nf 1 --exp_name $student_name --teacher_path outputs/$teacher_model```
+--diffusion_noise_precision 1e-5 --diffusion_steps 500 --diffusion_loss_type l2 --batch_size 64 --nf 256 
+--n_layers 9 --lr 1e-4 --normalize_factors [1,4,10] --test_epochs 10 --ema_decay 0.9999 --train_diffusion
+--latent_nf 2 --exp_name $student_name --teacher_path outputs/$teacher_model```
 '''
 
 parser = argparse.ArgumentParser(description='ProgDistillatsion')
@@ -55,7 +55,7 @@ parser.add_argument('--probabilistic_model', type=str, default='diffusion',
                     help='diffusion')
 
 # Training complexity is O(1) (unaffected), but sampling complexity is O(steps).
-parser.add_argument('--diffusion_steps', type=int, default=500, help='teacher difusion steps')
+parser.add_argument('--diffusion_steps', type=int, default=500, help='student difusion steps')
 parser.add_argument('--diffusion_noise_schedule', type=str, default='polynomial_2',
                     help='learned, cosine')
 parser.add_argument('--diffusion_noise_precision', type=float, default=1e-5,
@@ -202,17 +202,19 @@ else:
 
 args.context_node_nf = context_node_nf
 
+N = args.diffusion_steps
+
 # Create Latent Diffusion Model or Audoencoder
 if args.train_diffusion:
+    args.diffusion_steps = 2*N
     teacher, nodes_dist, prop_dist = get_latent_diffusion(args, device, dataset_info, dataloaders['train'])
+    args.diffusion_steps = N
 else:
     model, nodes_dist, prop_dist = get_autoencoder(args, device, dataset_info, dataloaders['train'])
 
 # student model starts from the teacher model
 model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher 
-
-# TODO change exp name
-# TODO divide steps by two
+# TODO model.Gamma. 
 
 
 if prop_dist is not None:
@@ -263,6 +265,13 @@ def compute_loss_and_nll(args, teacher_model, student_model, nodes_dist, x, h, n
 
 def main():
     if args.teacher_path is not None:
+
+        teacher_exp_name = basename(args.teacher_path)
+        with open(join(args.teacher_path, 'args.pickle'), 'rb') as f:
+            teacher_args = pickle.load(f)
+            teacher_args.exp_name = teacher_exp_name
+
+
         model_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
         teacher.load_state_dict(model_state_dict)
 
