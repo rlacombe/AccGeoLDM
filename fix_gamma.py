@@ -53,7 +53,7 @@ model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule
                                                    args.diffusion_steps, args.diffusion_noise_precision)
 model_ema.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
-args.exp_name = args.exp_name+'gamma_fixed'
+args.exp_name = args.exp_name+'_gamma_fixed'
 
 utils.create_folders(args)
 
