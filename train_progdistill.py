@@ -264,7 +264,7 @@ def sample_different_sizes_and_save(model, nodes_dist, args, device, dataset_inf
 
 
 def analyze_and_save(epoch, model_sample, nodes_dist, args, device, dataset_info, prop_dist,
-                     n_samples=1000, batch_size=100):
+                     n_samples=10, batch_size=100):
     print(f'Analyzing molecule stability at epoch {epoch}...')
     batch_size = min(batch_size, n_samples)
     assert n_samples % batch_size == 0
