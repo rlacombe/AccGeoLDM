@@ -85,6 +85,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
         # Compute loss
         loss = torch.square(student_target - teacher_target)
 
+        loss = loss.mean()
         loss.backward()
 
         if args.clip_grad:
