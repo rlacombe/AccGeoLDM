@@ -262,8 +262,8 @@ def compute_loss_and_nll(args, teacher_model, student_model, nodes_dist, x, h, n
 
 
 def main():
-    if args.teacher is not None:
-        model_state_dict = torch.load(join(args.teacher, 'generative_model_ema.npy'))
+    if args.teacher_path is not None:
+        model_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
         teacher.load_state_dict(model_state_dict)
 
     # Initialize dataparallel if enabled and possible.
