@@ -119,7 +119,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
             if len(args.conditioning) > 0:
                 vis.visualize_chain("outputs/%s/epoch_%d/conditional/" % (args.exp_name, epoch), dataset_info,
                                     wandb=wandb, mode='conditional')
-        wandb.log({"Batch NLL": loss.item()}, commit=True)
+        wandb.log({"Batch Loss": loss.item()}, commit=True)
         if args.break_train_epoch:
             break
     wandb.log({"Train Epoch Loss": np.mean(loss_epoch)}, commit=False)
