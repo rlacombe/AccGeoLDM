@@ -8,7 +8,7 @@ import utils
 import argparse
 import wandb
 from configs.datasets_config import get_dataset_info
-from os.path import join
+from os.path import join, basename
 from qm9 import dataset
 from qm9.models import get_optim, get_model, get_autoencoder, get_latent_diffusion
 from equivariant_diffusion import en_diffusion
@@ -155,10 +155,10 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 device = torch.device("cuda" if args.cuda else "cpu")
 dtype = torch.float32
 
-if args.teacher is not None:
-    teacher_exp_name = args.teacher
+if args.teacher_path is not None:
+    teacher_exp_name = basename(args.teacher_path)
 
-    with open(join(args.teacher, 'args.pickle'), 'rb') as f:
+    with open(join(args.teacher_path, 'args.pickle'), 'rb') as f:
         teacher_args = pickle.load(f)
 
     teacher_args.exp_name = teacher_exp_name
