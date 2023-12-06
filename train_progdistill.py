@@ -17,7 +17,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
                 nodes_dist, gradnorm_queue, dataset_info, prop_dist):
     model_dp.train()
     model.train()
-    nll_epoch = []
+    loss_epoch = []
     n_iterations = len(loader)
     for i, data in enumerate(loader):
         x = data['positions'].to(device, dtype)
@@ -226,7 +226,7 @@ def test(args, loader, epoch, eval_model, device, dtype, property_norms, nodes_d
                 context = None
 
             # transform batch through flow
-            nll, _, _ = losses.compute_loss_and_nll(args, eval_model, nodes_dist, x, h,
+            loss, _, _ = losses.compute_loss_and_nll(args, eval_model, nodes_dist, x, h,
                                                     node_mask, edge_mask, context)
             # standard nll from forward KL
 
