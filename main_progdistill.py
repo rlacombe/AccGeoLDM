@@ -11,7 +11,7 @@ from configs.datasets_config import get_dataset_info
 from os.path import join
 from qm9 import dataset
 from qm9.models import get_optim, get_model, get_autoencoder, get_latent_diffusion
-from equivariant_diffusion import en_progdistill
+from equivariant_diffusion import en_diffusion
 from equivariant_diffusion.utils import assert_correctly_masked
 from equivariant_diffusion import utils as flow_utils
 import torch
@@ -20,14 +20,12 @@ import pickle
 from qm9.utils import prepare_context, compute_mean_mad
 from train_progdistill import train_epoch, test, analyze_and_save
 
-
 '''
 ```python main_progdistill.py --n_epochs 30 --n_stability_samples 1000 --diffusion_noise_schedule polynomial_2 
 --diffusion_noise_precision 1e-5 --diffusion_steps 1000 --diffusion_loss_type l2 --batch_size 64 --nf 256 
---n_layers 9 --lr 1e-4 --normalize_factors [1,4,10] --test_epochs 20 --ema_decay 0.9999 --train_diffusion 
---trainable_ae --latent_nf 1 --exp_name $student_name --teacher_path outputs/$teacher_model```
+--n_layers 9 --lr 1e-4 --normalize_factors [1,4,10] --test_epochs 20 --ema_decay 0.9999 --train_diffusion
+--latent_nf 1 --exp_name $student_name --teacher_path outputs/$teacher_model```
 '''
-
 
 parser = argparse.ArgumentParser(description='ProgDistillatsion')
 parser.add_argument('--exp_name', type=str, default='debug_10')
@@ -212,6 +210,7 @@ model = teacher.deepcopy() # NOTE 'model' is the student model, 'teacher' is the
 # TODO change exp name
 # TODO divide steps by two
 
+
 if prop_dist is not None:
     prop_dist.set_normalizer(property_norms)
 model = model.to(device)
@@ -226,6 +225,36 @@ def check_mask_correct(variables, node_mask):
     for variable in variables:
         if len(variable) > 0:
             assert_correctly_masked(variable, node_mask)
+
+
+def compute_loss_and_nll(args, teacher_model, student_model, nodes_dist, x, h, node_mask, edge_mask, context):
+    bs, n_nodes, n_dims = x.size()
+
+    if args.probabilistic_model == 'diffusion':
+        edge_mask = edge_mask.view(bs, n_nodes * n_nodes)
+
+        assert_correctly_masked(x, node_mask)
+
+        # Here x is a position tensor, and h is a dictionary with keys
+        # 'categorical' and 'integer'.
+        nll = generative_model(x, h, node_mask, edge_mask, context)
+
+        N = node_mask.squeeze(2).sum(1).long()
+
+        log_pN = nodes_dist.log_prob(N)
+
+        assert nll.size() == log_pN.size()
+        nll = nll - log_pN
+
+        # Average over batch.
+        nll = nll.mean(0)
+
+        reg_term = torch.tensor([0.]).to(nll.device)
+        mean_abs_z = 0.
+    else:
+        raise ValueError(args.probabilistic_model)
+
+    return nll, reg_term, mean_abs_z
 
 
 def main():
