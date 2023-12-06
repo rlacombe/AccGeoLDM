@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description='ProgDistillatsion')
 parser.add_argument('--exp_name', type=str, default='qm9_500')
 args = parser.parse_args()
 
-with open(join(args.exp_name, 'args.pickle'), 'rb') as f:
+with open(join(f'outputs/{args.exp_name}', 'args.pickle'), 'rb') as f:
     args = pickle.load(f)
 
 dataset_info = get_dataset_info(args.dataset, args.remove_h)
