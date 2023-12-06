@@ -216,7 +216,6 @@ else:
 model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher 
 # TODO model.Gamma. 
 
-
 if prop_dist is not None:
     prop_dist.set_normalizer(property_norms)
 model = model.to(device)
@@ -302,7 +301,7 @@ def main():
     for epoch in range(args.start_epoch, args.n_epochs):
         start_epoch = time.time()
         train_epoch(args=args, loader=dataloaders['train'], epoch=epoch, teacher=teacher, model=model,
-                    model_ema=model_ema, ema=ema, device=device, dtype=dtype, property_norms=property_norms,
+                    model_ema=model_ema, model_dp=model_dp, ema=ema, device=device, dtype=dtype, property_norms=property_norms,
                     nodes_dist=nodes_dist, dataset_info=dataset_info,
                     gradnorm_queue=gradnorm_queue, optim=optim, prop_dist=prop_dist)
         
