@@ -155,7 +155,7 @@ def encode_to_latent_space(model, x, h, node_mask, edge_mask, context):
         z_x_mu, z_x_sigma, z_h_mu, z_h_sigma = model.vae.encode(x, h, node_mask, edge_mask, context)
         # Compute fixed sigma values.
         t_zeros = torch.zeros(size=(x.size(0), 1), device=x.device)
-        gamma_0 = model.inflate_batch_array(self.gamma(t_zeros), x)
+        gamma_0 = model.inflate_batch_array(model.gamma(t_zeros), x)
         sigma_0 = model.sigma(gamma_0, x)
 
         # Infer latent z.
@@ -168,8 +168,8 @@ def encode_to_latent_space(model, x, h, node_mask, edge_mask, context):
         z_xh = z_xh.detach()  # Always keep the encoder fixed.
         diffusion_utils.assert_correctly_masked(z_xh, node_mask)
 
-        z_x = z_xh[:, :, :self.n_dims]
-        z_h = z_xh[:, :, self.n_dims:]
+        z_x = z_xh[:, :, :model.n_dims]
+        z_h = z_xh[:, :, model.n_dims:]
         diffusion_utils.assert_mean_zero_with_mask(z_x, node_mask)
         # Make the data structure compatible with the EnVariationalDiffusion compute_loss().
         z_h = {'categorical': torch.zeros(0).to(z_h), 'integer': z_h}
