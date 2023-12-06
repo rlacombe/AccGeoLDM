@@ -101,10 +101,9 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
 
         if i % args.n_report_steps == 0:
             print(f"\rEpoch: {epoch}, iter: {i}/{n_iterations}, "
-                  f"Loss {loss.item():.2f}, NLL: {nll.item():.2f}, "
-                  f"RegTerm: {reg_term.item():.1f}, "
+                  f"Loss {loss.item():.2f}"
                   f"GradNorm: {grad_norm:.1f}")
-        nll_epoch.append(nll.item())
+        loss_epoch.append(loss.item())
         if (epoch % args.test_epochs == 0) and (i % args.visualize_every_batch == 0) and not (epoch == 0 and i == 0) and args.train_diffusion:
             start = time.time()
             if len(args.conditioning) > 0:
@@ -120,10 +119,10 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
             if len(args.conditioning) > 0:
                 vis.visualize_chain("outputs/%s/epoch_%d/conditional/" % (args.exp_name, epoch), dataset_info,
                                     wandb=wandb, mode='conditional')
-        wandb.log({"Batch NLL": nll.item()}, commit=True)
+        wandb.log({"Batch NLL": loss.item()}, commit=True)
         if args.break_train_epoch:
             break
-    wandb.log({"Train Epoch NLL": np.mean(nll_epoch)}, commit=False)
+    wandb.log({"Train Epoch Loss": np.mean(loss_epoch)}, commit=False)
 
 
 
@@ -194,7 +193,7 @@ def check_mask_correct(variables, node_mask):
 def test(args, loader, epoch, eval_model, device, dtype, property_norms, nodes_dist, partition='Test'):
     eval_model.eval()
     with torch.no_grad():
-        nll_epoch = 0
+        loss_epoch = 0
         n_samples = 0
 
         n_iterations = len(loader)
@@ -231,13 +230,13 @@ def test(args, loader, epoch, eval_model, device, dtype, property_norms, nodes_d
                                                     node_mask, edge_mask, context)
             # standard nll from forward KL
 
-            nll_epoch += nll.item() * batch_size
+            loss_epoch += loss.item() * batch_size
             n_samples += batch_size
             if i % args.n_report_steps == 0:
                 print(f"\r {partition} NLL \t epoch: {epoch}, iter: {i}/{n_iterations}, "
-                      f"NLL: {nll_epoch/n_samples:.2f}")
+                      f"NLL: {loss_epoch/n_samples:.2f}")
 
-    return nll_epoch/n_samples
+    return loss_epoch/n_samples
 
 
 def save_and_sample_chain(model, args, device, dataset_info, prop_dist,
