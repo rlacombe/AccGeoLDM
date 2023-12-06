@@ -45,11 +45,9 @@ optim_state_dict = torch.load(join(args.teacher_path, 'optim.npy'))
 
 model, _, _ = get_latent_diffusion(args, torch.device("cpu"), dataset_info, dataloaders['train'])
 model_ema = copy.deepcopy(model)
-optim = get_optim(args, model)
 
 model.load_state_dict(model_state_dict)
 model_ema.load_state_dict(model_ema_state_dict)
-optim.load_state_dict(model_state_dict)
 
 model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
