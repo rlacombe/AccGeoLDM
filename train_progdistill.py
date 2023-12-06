@@ -66,7 +66,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
         # Sample z_t given x, h for timestep t, from q(z_t | x, h)
         z_t = alpha_t * xh + sigma_t * eps
 
-        diffusion_utils.assert_mean_zero_with_mask(z_t[:, :, :self.n_dims], node_mask)
+        diffusion_utils.assert_mean_zero_with_mask(z_t[:, :, :model.n_dims], node_mask)
 
         # Compute teacher target (no_gard so the teacher stays fixed)
         with torch.no_grad():
