@@ -49,7 +49,7 @@ model_ema = copy.deepcopy(model)
 model.load_state_dict(model_state_dict)
 model_ema.load_state_dict(model_ema_state_dict)
 
-args.diffusion_steps = args.diffusion_steps/2
+args.diffusion_steps = args.diffusion_steps//2
 
 model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
