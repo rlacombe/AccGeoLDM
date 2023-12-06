@@ -80,7 +80,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
             teacher_target = (z_v - (sigma_v/sigma_t)*z_t)/(alpha_v - (sigma_v/sigma_t)*alpha_t)
 
         # Foward pass of the student
-            student_target = denoise_step(model, z_t, alpha_t, sigma_t, t, node_mask, edge_mask, context)
+        student_target = denoise_step(model, z_t, alpha_t, sigma_t, t, node_mask, edge_mask, context)
         
         # Compute loss
         loss = torch.square(student_target - teacher_target)
