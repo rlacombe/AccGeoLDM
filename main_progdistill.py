@@ -271,7 +271,6 @@ def main():
             teacher_args = pickle.load(f)
             teacher_args.exp_name = teacher_exp_name
 
-
         model_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
         teacher.load_state_dict(model_state_dict)
 

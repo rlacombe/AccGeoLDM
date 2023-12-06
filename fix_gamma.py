@@ -20,15 +20,10 @@ import pickle
 from qm9.utils import prepare_context, compute_mean_mad
 from train_progdistill import train_epoch, test, analyze_and_save
 
-'''
-python main_progdistill.py --n_epochs 30 --n_stability_samples 10 --diffusion_noise_schedule polynomial_2 
---diffusion_noise_precision 1e-5 --diffusion_steps 500 --diffusion_loss_type l2 --batch_size 64 --nf 256 
---n_layers 9 --lr 1e-4 --normalize_factors [1,4,10] --test_epochs 10 --ema_decay 0.9999 --train_diffusion
---latent_nf 2 --exp_name $student_name --teacher_path outputs/$teacher_model
-'''
+
 
 parser = argparse.ArgumentParser(description='ProgDistillatsion')
-parser.add_argument('--exp_name', type=str, default='qm9_500')
+parser.add_argument('--exp_name', type=str, default='gamma_fixed')
 args = parser.parse_args()
 
 with open(join(f'outputs/{args.exp_name}', 'args.pickle'), 'rb') as f:
@@ -39,9 +34,9 @@ dataloaders, charge_scale = dataset.retrieve_dataloaders(args)
 
 args.diffusion_steps = 2*args.diffusion_steps
 
-model_state_dict = torch.load(join(args.teacher_path, 'generative_model.npy'))
-model_ema_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
-optim_state_dict = torch.load(join(args.teacher_path, 'optim.npy'))
+model_state_dict = torch.load(join(f'outputs/{args.exp_name}', 'generative_model.npy'))
+model_ema_state_dict = torch.load(f'outputs/{args.exp_name}', 'generative_model_ema.npy'))
+optim_state_dict = torch.load(join(f'outputs/{args.exp_name}', 'optim.npy'))
 
 model, _, _ = get_latent_diffusion(args, torch.device("cpu"), dataset_info, dataloaders['train'])
 model_ema = copy.deepcopy(model)
@@ -55,9 +50,11 @@ model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule
                                                    args.diffusion_steps, args.diffusion_noise_precision)
 model_ema.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
+
+optim = get_optim(args, model)
+optim.load_state_dict(optim_state_dict)
+
 args.exp_name = args.exp_name+'_gamma_fixed'
-
-
 utils.create_folders(args)
 
 utils.save_model(model, 'outputs/%s/generative_model.npy' % args.exp_name)
