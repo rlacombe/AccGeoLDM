@@ -51,12 +51,12 @@ model.load_state_dict(model_state_dict)
 model_ema.load_state_dict(model_ema_state_dict)
 optim.load_state_dict(model_state_dict)
 
-model.gamma = model.gamma[::2]
-model_ema.gamma = model_ema.gamma[::2]
-
+model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
+                                                   args.diffusion_steps, args.diffusion_noise_precision)
+model_ema.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
+                                                   args.diffusion_steps, args.diffusion_noise_precision)
 args.exp_name = args.exp_name+'gamma_fixed'
 
-utils.save_model(optim, 'outputs/%s/optim.npy' % args.exp_name)
 utils.save_model(model, 'outputs/%s/generative_model.npy' % args.exp_name)
 utils.save_model(model_ema, 'outputs/%s/generative_model_ema.npy' % args.exp_name)
 with open('outputs/%s/args.pickle' % args.exp_name, 'wb') as f:

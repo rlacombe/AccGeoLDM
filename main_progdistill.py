@@ -214,7 +214,8 @@ else:
 
 # student model starts from the teacher model
 model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher  
-model.gamma = model.gamma[::2] # NOTE need to divide the time schedule
+model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
+                                                   args.diffusion_steps, args.diffusion_noise_precision)
 
 if prop_dist is not None:
     prop_dist.set_normalizer(property_norms)
