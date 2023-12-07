@@ -140,7 +140,7 @@ def sample_time_steps(model, N, x):
 
         # Sample a timestep t.
         t_int = torch.randint(
-            1, model.T + 1, size=(x.size(0), 1), device=x.device).float()
+            1, N + 1, size=(x.size(0), 1), device=x.device).float()
 
         t = t_int / model.T
         u = t - .5/N

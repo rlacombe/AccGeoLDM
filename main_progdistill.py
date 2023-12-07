@@ -170,6 +170,7 @@ if args.teacher_path is not None:
         args.aggregation_method = aggregation_method
 
     print(f" #### Teacher model: ####\n{args}")
+    print(teacher_args)
 
 utils.create_folders(args)
 # print(args)
@@ -220,10 +221,16 @@ if args.teacher_path is not None:
     model_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
     teacher.load_state_dict(model_state_dict)
 
-# Student model starts from the teacher model
-model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher  
-model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
-                                                   args.diffusion_steps, args.diffusion_noise_precision)
+    # Student model starts from the teacher model
+    model = copy.deepcopy(teacher)
+
+    # Change noising schedule to have half the steps
+    model.T = args.diffusion_steps
+    model.gamma = en_diffusion.PredefinedNoiseSchedule(
+        args.diffusion_noise_schedule,
+        args.diffusion_steps,
+        args.diffusion_noise_precision,
+    )
 
 if prop_dist is not None:
     prop_dist.set_normalizer(property_norms)
