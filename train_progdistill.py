@@ -16,7 +16,7 @@ from equivariant_diffusion import utils as diffusion_utils
 def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, device, dtype, property_norms, optim,
                 nodes_dist, gradnorm_queue, dataset_info, prop_dist):
     model_dp.train()
-    model.train()
+    model.train() # NOTE 'model' is the student model (takes $args.diffusion_steps steps), 'teacher' is the teacher
     loss_epoch = []
     n_iterations = len(loader)
     for i, data in enumerate(loader):
@@ -50,27 +50,28 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
 
         optim.zero_grad()
 
-        # Send batch to latent space
-        z_x, z_h =  encode_to_latent_space(teacher, x, h, node_mask, edge_mask, context) 
-
-        # Sample time steps
-        t, u, v, alpha_t, sigma_t, alpha_u, sigma_u, alpha_v, sigma_v = sample_time_steps(teacher, args.diffusion_steps, z_x)
-
-        # Sample zt ~ Normal(alpha_t x, sigma_t)
-        eps = teacher.sample_combined_position_feature_noise(
-            n_samples=x.size(0), n_nodes=x.size(1), node_mask=node_mask)
-
-        # Concatenate x, h[integer] and h[categorical].
-        xh = torch.cat([z_x, z_h['categorical'], z_h['integer']], dim=2)
-
-        # Sample z_t given x, h for timestep t, from q(z_t | x, h)
-        z_t = alpha_t * xh + sigma_t * eps
-
-        diffusion_utils.assert_mean_zero_with_mask(z_t[:, :, :model.n_dims], node_mask)
-
         # Compute teacher target (no_gard so the teacher stays fixed)
         with torch.no_grad():
 
+            # Send batch to latent space
+             z_x, z_h =  encode_to_latent_space(teacher, x, h, node_mask, edge_mask, context) 
+
+            # Sample time steps
+            t, u, v, alpha_t, sigma_t, alpha_u, sigma_u, alpha_v, sigma_v = sample_time_steps(teacher, args.diffusion_steps, z_x)
+
+            # Sample zt ~ Normal(alpha_t x, sigma_t)
+            eps = teacher.sample_combined_position_feature_noise(n_samples=x.size(0), 
+                                                                 n_nodes=x.size(1), node_mask=node_mask)
+
+            # Concatenate x, h[integer] and h[categorical].
+            xh = torch.cat([z_x, z_h['categorical'], z_h['integer']], dim=2)
+
+            # Sample z_t given x, h for timestep t, from q(z_t | x, h)
+            z_t = alpha_t * xh + sigma_t * eps
+
+            diffusion_utils.assert_mean_zero_with_mask(z_t[:, :, :model.n_dims], node_mask)
+
+            # Compute double denoising steps
             xhat_zt = denoise_step(teacher, z_t, alpha_t, sigma_t, t, node_mask, edge_mask, context)
             z_u = alpha_u * xhat_zt + (sigma_u/sigma_t) * (z_t - alpha_t * xhat_zt)
 
@@ -79,13 +80,21 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
 
             teacher_target = (z_v - (sigma_v/sigma_t)*z_t)/(alpha_v - (sigma_v/sigma_t)*alpha_t)
 
+        # Detach target and inputs for *extra* caution
+        teacher_target.detach()
+        z_t.detach()
+        alpha_t.detach()
+        sigma_t.detach()
+        t.detach()        
+
         # Foward pass of the student
         student_target = denoise_step(model, z_t, alpha_t, sigma_t, t, node_mask, edge_mask, context)
         
         # Compute loss
         loss = torch.square(student_target - teacher_target)
-
         loss = loss.mean()
+
+        # Take backward pass
         loss.backward()
 
         if args.clip_grad:
@@ -93,6 +102,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
         else:
             grad_norm = 0.
 
+        # Optimize student params
         optim.step()
 
         # Update EMA if enabled.

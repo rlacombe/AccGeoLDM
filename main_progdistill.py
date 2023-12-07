@@ -190,7 +190,6 @@ dataloaders, charge_scale = dataset.retrieve_dataloaders(args)
 
 data_dummy = next(iter(dataloaders['train']))
 
-
 if len(args.conditioning) > 0:
     print(f'Conditioning on {args.conditioning}')
     property_norms = compute_mean_mad(dataloaders, args.conditioning, args.dataset)
@@ -212,7 +211,16 @@ if args.train_diffusion:
 else:
     model, nodes_dist, prop_dist = get_autoencoder(args, device, dataset_info, dataloaders['train'])
 
-# student model starts from the teacher model
+if args.teacher_path is not None:
+    teacher_exp_name = basename(args.teacher_path)
+    with open(join(args.teacher_path, 'args.pickle'), 'rb') as f:
+        teacher_args = pickle.load(f)
+        teacher_args.exp_name = teacher_exp_name
+
+    model_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
+    teacher.load_state_dict(model_state_dict)
+
+# Student model starts from the teacher model
 model = copy.deepcopy(teacher) # NOTE 'model' is the student model, 'teacher' is the teacher  
 model.gamma = en_diffusion.PredefinedNoiseSchedule(args.diffusion_noise_schedule, 
                                                    args.diffusion_steps, args.diffusion_noise_precision)
@@ -243,7 +251,7 @@ def compute_loss_and_nll(args, teacher_model, student_model, nodes_dist, x, h, n
 
         # Here x is a position tensor, and h is a dictionary with keys
         # 'categorical' and 'integer'.
-        nll = generative_model(x, h, node_mask, edge_mask, context)
+        nll = student_model (x, h, node_mask, edge_mask, context)
 
         N = node_mask.squeeze(2).sum(1).long()
 
@@ -264,16 +272,6 @@ def compute_loss_and_nll(args, teacher_model, student_model, nodes_dist, x, h, n
 
 
 def main():
-    if args.teacher_path is not None:
-
-        teacher_exp_name = basename(args.teacher_path)
-        with open(join(args.teacher_path, 'args.pickle'), 'rb') as f:
-            teacher_args = pickle.load(f)
-            teacher_args.exp_name = teacher_exp_name
-
-        model_state_dict = torch.load(join(args.teacher_path, 'generative_model_ema.npy'))
-        teacher.load_state_dict(model_state_dict)
-
     # Initialize dataparallel if enabled and possible.
     if args.dp and torch.cuda.device_count() > 1:
         print(f'Training using {torch.cuda.device_count()} GPUs')
