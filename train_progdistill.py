@@ -54,7 +54,7 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
         with torch.no_grad():
 
             # Send batch to latent space
-             z_x, z_h =  encode_to_latent_space(teacher, x, h, node_mask, edge_mask, context) 
+            z_x, z_h =  encode_to_latent_space(teacher, x, h, node_mask, edge_mask, context) 
 
             # Sample time steps
             t, u, v, alpha_t, sigma_t, alpha_u, sigma_u, alpha_v, sigma_v = sample_time_steps(teacher, args.diffusion_steps, z_x)
