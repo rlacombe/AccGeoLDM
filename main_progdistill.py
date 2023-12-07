@@ -169,8 +169,8 @@ if args.teacher_path is not None:
     if not hasattr(args, 'aggregation_method'):
         args.aggregation_method = aggregation_method
 
-    print(f" #### Teacher model: ####\n{args}")
-    print(teacher_args)
+    #print(f" #### Teacher model: ####\n{args}")
+    #print(teacher_args)
 
 utils.create_folders(args)
 # print(args)

@@ -57,7 +57,8 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
             z_x, z_h =  encode_to_latent_space(teacher, x, h, node_mask, edge_mask, context) 
 
             # Sample time steps
-            t, u, v, alpha_t, sigma_t, alpha_u, sigma_u, alpha_v, sigma_v = sample_time_steps(teacher, args.diffusion_steps, z_x)
+            t, u, v, alpha_t, sigma_t, alpha_u, \
+                sigma_u, alpha_v, sigma_v = sample_teacher_DDIM_time_steps(teacher, args.diffusion_steps, z_x)
 
             # Sample zt ~ Normal(alpha_t x, sigma_t)
             eps = teacher.sample_combined_position_feature_noise(n_samples=x.size(0), 
@@ -80,15 +81,19 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
 
             teacher_target = (z_v - (sigma_v/sigma_t)*z_t)/(alpha_v - (sigma_v/sigma_t)*alpha_t)
 
-        # Detach target and inputs for *extra* caution
-        teacher_target.detach()
-        z_t.detach()
-        alpha_t.detach()
-        sigma_t.detach()
-        t.detach()        
+            # Detach target and inputs for *extra* caution
+            teacher_target.detach()
+            z_t.detach()
+            alpha_t.detach()
+            sigma_t.detach()
+            t.detach()        
 
         # Foward pass of the student
-        student_target = denoise_step(model, z_t, alpha_t, sigma_t, t, node_mask, edge_mask, context)
+        with torch.no_grad():
+            gamma_t_std = model.inflate_batch_array(model.gamma(t), x) 
+            alpha_t_std, sigma_t_std = model.alpha(gamma_t_std, x), model.sigma(gamma_t_std, x) 
+
+        student_target = denoise_step(model, z_t, alpha_t_std, sigma_t_std, t, node_mask, edge_mask, context)
         
         # Compute loss
         loss = torch.square(student_target - teacher_target)
@@ -135,14 +140,13 @@ def train_epoch(args, loader, epoch, teacher, model, model_dp, model_ema, ema, d
     wandb.log({"Train Epoch Loss": np.mean(loss_epoch)}, commit=False)
 
 
-
-def sample_time_steps(model, N, x):
+def sample_teacher_DDIM_time_steps(model, N, x):
 
         # Sample a timestep t.
         t_int = torch.randint(
             1, N + 1, size=(x.size(0), 1), device=x.device).float()
 
-        t = t_int / model.T
+        t = t_int / N
         u = t - .5/N
         v = t - 1/N
 
@@ -190,7 +194,7 @@ def encode_to_latent_space(model, x, h, node_mask, edge_mask, context):
 
 def denoise_step(model, z_t, alpha_t, sigma_t, t, node_mask, edge_mask, context):
         
-    return z_t / alpha_t - model.phi(z_t, t, node_mask, edge_mask, context) * sigma_t / alpha_t
+    return (z_t / alpha_t) - (model.phi(z_t, t, node_mask, edge_mask, context) * (sigma_t / alpha_t))
         
         
 
